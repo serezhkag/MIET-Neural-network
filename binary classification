@@ -1,1 +1,69 @@
+import numpy as np
+import random
+import copy
 
+#создадим датасет
+dataset = list()
+dataset.append(([0, 0],0))
+dataset.append(([0, 1],1))
+dataset.append(([1, 0],1))
+dataset.append(([1, 1],1))
+
+#создадим зашумлённый датасет
+noise_dataset = list()
+for i in range(10000):
+  noise_dataset.append(copy.deepcopy(random.choice(dataset)))
+  for j in range(2):
+    noise_dataset[i][0][j] += (random.randint(-45, 45) * 0.01)
+
+#зададим веса векторов связей
+first_layer_weights=np.ones((2,1))
+
+#функция активации
+def result_bin_class(result):
+  if result>0:
+    return True
+  else:
+    return False
+
+#подсчёт суммарного веса всех полученных сигналов
+def calculate_res(input_number,first_layer_weights):
+  sum = 0
+  for i in range(2):
+    sum+= input_number[0][i%2]*first_layer_weights[i]
+  return sum
+
+#корректировка весов
+def weight_changing(positive, target):
+  k=0
+  if (positive and not target):
+    k=-0.1
+  elif (not positive and target):
+    k=0.1
+  return k
+
+#обучение нейронной сети
+def learn(input_number,first_layer_weights, target):
+  k=weight_changing(result_bin_class(calculate_res(input_number,first_layer_weights)), True if input_number[1] == target else False)
+  for i in range(1):
+    first_layer_weights[i]+=input_number[0][i%2]*k
+    return first_layer_weights
+
+def train_nn(input_dataset, first_layer_weights, target, size_of_data):
+  for i in range(size_of_data):
+    first_layer_weights = learn(random.choice(input_dataset),first_layer_weights,target)
+
+#тестирование обученной сети
+def test(input_number, first_layer_weights, target):
+  if (result_bin_class(calculate_res(input_number, first_layer_weights)) == (True if input_number[1] == target else False)):
+    return 1
+  else:
+    return 0
+
+def test_nn(input_dataset, first_layer_weights, target, size_of_data):
+  res = 0
+  for i in range(size_of_data):
+    res += test(random.choice(input_dataset), first_layer_weights, target)
+  return (res / size_of_data)
+
+print('Accuracy-score: ', test_nn(noise_dataset, first_layer_weights, 1, 200))
